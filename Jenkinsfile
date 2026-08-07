@@ -24,5 +24,17 @@ pipeline {
                 }
             }
         }
+
+        stage('AWS Test') {
+            steps {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'AKIA2ETZ7KVSU2Y6TEJK'
+                ]]) {
+                    sh 'aws sts get-caller-identity'
+                }
+            }
+        }
+
     }
 }
