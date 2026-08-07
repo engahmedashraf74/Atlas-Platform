@@ -5,12 +5,14 @@
 Atlas Platform is an end-to-end DevOps project that demonstrates a complete CI/CD and GitOps workflow using:
 
 - GitHub
+- Terraform
 - Jenkins
 - Docker
 - Amazon ECR
 - Amazon EKS
 - Kubernetes
 - ArgoCD
+  
 
 The project automatically builds, validates, containerizes, and deploys applications to Kubernetes running on AWS EKS.
 
