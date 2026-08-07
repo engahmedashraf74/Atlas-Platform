@@ -1,0 +1,15 @@
+# Terraform
+*.tfstate
+*.tfstate.backup
+.terraform/
+
+# Maven / Gradle
+target/
+build/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
