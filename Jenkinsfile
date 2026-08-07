@@ -1,6 +1,16 @@
 pipeline {
     agent any
 
+    triggers {
+        pollSCM('* * * * *')
+    }
+
+    environment {
+        AWS_REGION = 'eu-central-1'
+        ECR_REPOSITORY = '697114252645.dkr.ecr.eu-central-1.amazonaws.com/atlas-app'
+        IMAGE_TAG = "${BUILD_NUMBER}"
+    }
+
     stages {
 
         stage('Checkout') {
@@ -12,12 +22,12 @@ pipeline {
         stage('Build') {
             steps {
                 dir('app/complete') {
-                    sh './mvnw clean package'
+                    sh './mvnw clean package -DskipTests'
                 }
             }
         }
 
-        stage('Test') {
+        stage('Unit Tests') {
             steps {
                 dir('app/complete') {
                     sh './mvnw test'
@@ -25,26 +35,34 @@ pipeline {
             }
         }
 
-        stage('AWS Test') {
+        stage('YAML Lint') {
             steps {
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'AKIA2ETZ7KVSU2Y6TEJK'
-                ]]) {
-                    sh 'aws sts get-caller-identity'
-                }
+                sh 'yamllint k8s/'
             }
         }
 
-        stage('Docker Build') {
+        stage('Kubernetes Schema Validation') {
             steps {
-                dir('app/complete') {
-                    sh 'docker build -t atlas-app:v1 .'
-                }
+                sh '''
+                kubeconform \
+                -strict \
+                -summary \
+                k8s/*.yaml
+                '''
             }
         }
 
-        stage('Push To ECR') {
+        stage('Kubernetes Dry Run') {
+            steps {
+                sh '''
+                kubectl apply \
+                --dry-run=client \
+                -f k8s/
+                '''
+            }
+        }
+
+        stage('AWS Credentials Test') {
             steps {
                 withCredentials([[
                     $class: 'AmazonWebServicesCredentialsBinding',
@@ -52,20 +70,100 @@ pipeline {
                 ]]) {
 
                     sh '''
-                    aws ecr get-login-password --region eu-central-1 | \
-                    docker login --username AWS --password-stdin \
-                    697114252645.dkr.ecr.eu-central-1.amazonaws.com
-
-                    docker tag atlas-app:v1 \
-                    697114252645.dkr.ecr.eu-central-1.amazonaws.com/atlas-app:v1
-
-                    docker push \
-                    697114252645.dkr.ecr.eu-central-1.amazonaws.com/atlas-app:v1
+                    aws sts get-caller-identity
                     '''
                 }
             }
         }
 
+        stage('Docker Build') {
+            steps {
+                dir('app/complete') {
+
+                    sh '''
+                    docker build \
+                    -t atlas-app:${IMAGE_TAG} \
+                    .
+                    '''
+                }
+            }
+        }
+
+        stage('Docker Image Check') {
+            steps {
+                sh '''
+                docker images | grep atlas-app
+                '''
+            }
+        }
+
+        stage('Login To ECR') {
+            steps {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'AKIA2ETZ7KVSU2Y6TEJK'
+                ]]) {
+
+                    sh '''
+                    aws ecr get-login-password \
+                    --region ${AWS_REGION} | \
+                    docker login \
+                    --username AWS \
+                    --password-stdin \
+                    697114252645.dkr.ecr.eu-central-1.amazonaws.com
+                    '''
+                }
+            }
+        }
+
+        stage('Tag Image') {
+            steps {
+                sh '''
+                docker tag \
+                atlas-app:${IMAGE_TAG} \
+                ${ECR_REPOSITORY}:${IMAGE_TAG}
+                '''
+            }
+        }
+
+        stage('Push To ECR') {
+            steps {
+                sh '''
+                docker push \
+                ${ECR_REPOSITORY}:${IMAGE_TAG}
+                '''
+            }
+        }
+
+        stage('Verify Image In ECR') {
+            steps {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'AKIA2ETZ7KVSU2Y6TEJK'
+                ]]) {
+
+                    sh '''
+                    aws ecr list-images \
+                    --repository-name atlas-app \
+                    --region ${AWS_REGION}
+                    '''
+                }
+            }
+        }
     }
-}
+
+    post {
+
+        success {
+            echo 'CI Pipeline completed successfully!'
+        }
+
+        failure {
+            echo 'Pipeline failed!'
+        }
+
+        always {
+            sh 'docker image prune -f || true'
+        }
+    }
 }

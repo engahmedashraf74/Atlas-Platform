@@ -2,24 +2,24 @@ apiVersion: apps/v1
 kind: Deployment
 
 metadata:
-  name: nginx-deployment
+  name: atlas-app
 
 spec:
   replicas: 2
 
   selector:
     matchLabels:
-      app: nginx
+      app: atlas-app
 
   template:
     metadata:
       labels:
-        app: nginx
+        app: atlas-app
 
     spec:
       containers:
-        - name: nginx
-          image: nginx:latest
+        - name: atlas-app
+          image: 697114252645.dkr.ecr.eu-central-1.amazonaws.com/atlas-app:v1
 
           ports:
-            - containerPort: 80
+            - containerPort: 8080
