@@ -1,196 +1,161 @@
-# Atlas Platform - End-to-End DevOps CI/CD Pipeline
+# Atlas Platform - End-to-End DevOps Project
 
 ## Project Overview
 
-Atlas Platform is an end-to-end DevOps project that demonstrates a complete CI/CD and GitOps workflow using:
+Atlas Platform is an end-to-end DevOps project that demonstrates Infrastructure as Code (IaC), CI/CD automation, containerization, Kubernetes orchestration, and GitOps deployment on AWS.
 
-- GitHub
-- Terraform
-- Jenkins
-- Docker
-- Amazon ECR
-- Amazon EKS
-- Kubernetes
-- ArgoCD
-  
-
-The project automatically builds, validates, containerizes, and deploys applications to Kubernetes running on AWS EKS.
+The project provisions AWS infrastructure using Terraform, builds and validates application changes through Jenkins, stores container images in Amazon ECR, deploys workloads to Amazon EKS, and manages deployments using ArgoCD.
 
 ---
 
 ## Architecture
 
-Developer Pushes Code
-        |
-        v
-     GitHub
-        |
-        v
-    Jenkins
-        |
-        +--> Build
-        +--> Unit Tests
-        +--> YAML Lint
-        +--> Kubernetes Validation
-        +--> Docker Build
-        |
-        v
- Amazon ECR
-        |
-        v
-    ArgoCD
-        |
-        v
- Amazon EKS
-        |
-        v
- Running Pods
-
----
-
-## CI Pipeline Stages
-
-### 1. Checkout
-Pull latest source code from GitHub.
-
-### 2. Build
-Compile and package the application using Maven.
-
-```bash
-./mvnw clean package
-```
-
-### 3. Unit Tests
-
-```bash
-./mvnw test
-```
-
-### 4. YAML Validation
-
-Validate Kubernetes manifests using:
-
-```bash
-yamllint k8s/
-```
-
-### 5. Kubernetes Schema Validation
-
-```bash
-kubeconform -strict -summary k8s/*.yaml
-```
-
-### 6. AWS Credentials Validation
-
-Verify Jenkins can communicate with AWS.
-
-```bash
-aws sts get-caller-identity
-```
-
-### 7. Docker Build
-
-```bash
-docker build -t atlas-app:v1 .
-```
-
-### 8. Push Image to Amazon ECR
-
-Push the Docker image to a private ECR repository.
-
-### 9. Verify Image
-
-Verify image availability in ECR.
-
----
-
-## CD Pipeline
-
-ArgoCD continuously monitors the Git repository and synchronizes Kubernetes manifests with the EKS cluster.
-
-Git Repository → ArgoCD → EKS Cluster
+Terraform → AWS Infrastructure → Jenkins CI/CD → Docker → Amazon ECR → Amazon EKS → ArgoCD
 
 ---
 
 ## Technologies Used
 
-| Tool | Purpose |
-|--------|----------|
-| GitHub | Source Control |
-| Jenkins | Continuous Integration |
-| Docker | Containerization |
-| Amazon ECR | Container Registry |
-| Amazon EKS | Kubernetes Cluster |
-| Kubernetes | Container Orchestration |
-| ArgoCD | GitOps Continuous Delivery |
-| Maven | Build Tool |
-| Yamllint | YAML Validation |
-| Kubeconform | Kubernetes Schema Validation |
+### Infrastructure as Code
+- Terraform
+- AWS VPC
+- AWS EKS
+- AWS IAM
+- AWS Networking
+
+### CI/CD
+- Jenkins
+- GitHub
+
+### Containerization
+- Docker
+- Amazon ECR
+
+### Kubernetes
+- Amazon EKS
+- Kubernetes Deployments
+- Kubernetes Services
+
+### GitOps
+- ArgoCD
+
+### Validation & Quality Checks
+- yamllint
+- kubeconform
+- kubectl dry-run
 
 ---
 
 ## Project Structure
 
-```
+```text
 atlas-platform/
 │
-├── app/
-│   └── complete/
-│
-├── k8s/
-│   ├── deployment.yaml
-│   └── service.yaml
-│
-├── Jenkinsfile
-│
+├── app/              # Application source code
+├── docker/           # Docker configuration
+├── terraform/        # AWS infrastructure provisioning
+├── k8s/              # Kubernetes manifests
+├── Jenkinsfile       # Jenkins CI/CD pipeline
 └── README.md
 ```
 
 ---
 
-## Deployment Verification
+## CI/CD Pipeline Flow
 
-Check deployments:
+1. Jenkins polls GitHub repository.
+2. Source code checkout.
+3. Application build and testing.
+4. Kubernetes YAML linting.
+5. Kubernetes schema validation.
+6. Docker image build.
+7. Push image to Amazon ECR.
+8. ArgoCD detects repository changes.
+9. Deployment automatically synchronized to Amazon EKS.
+
+---
+
+## Infrastructure Provisioning
+
+Terraform provisions:
+
+- VPC
+- Public Subnets
+- Private Subnets
+- Internet Gateway
+- NAT Gateway
+- Route Tables
+- IAM Roles
+- Amazon EKS Cluster
+- EKS Node Group
+
+---
+
+## Kubernetes Resources
+
+### Deployment
+
+- 2 Replicas
+- Container Image hosted in Amazon ECR
+- Port 8080 exposed internally
+
+### Service
+
+- LoadBalancer Service
+- Exposes application externally
+
+---
+
+## ArgoCD GitOps
+
+ArgoCD continuously monitors the GitHub repository and synchronizes any Kubernetes manifest changes to the EKS cluster.
+
+Features:
+
+- Continuous Deployment
+- Automatic Synchronization
+- Drift Detection
+- Deployment History
+
+---
+
+## Validation Stages
+
+The Jenkins pipeline validates Kubernetes manifests before deployment:
+
+### YAML Lint
 
 ```bash
-kubectl get deploy
+yamllint k8s/
 ```
 
-Check services:
+### Kubernetes Schema Validation
 
 ```bash
-kubectl get svc
+kubeconform -strict -summary k8s/*.yaml
 ```
 
-Check pods:
+### Kubernetes Dry Run
 
 ```bash
-kubectl get pods
+kubectl apply --dry-run=client -f k8s/
 ```
 
 ---
 
-## Key Achievements
+## Results
 
-- Implemented complete CI/CD pipeline
-- Automated Docker image builds
-- Integrated Amazon ECR
-- Deployed workloads to Amazon EKS
-- Implemented GitOps using ArgoCD
-- Added YAML and Kubernetes manifest validation
-- Automated application delivery workflow
+✅ Infrastructure provisioned with Terraform
 
----
+✅ CI pipeline automated with Jenkins
 
-## Future Improvements
+✅ Docker images stored in Amazon ECR
 
-- Helm Charts
-- Terraform Infrastructure Automation
-- Prometheus Monitoring
-- Grafana Dashboards
-- Loki Logging
-- Argo Rollouts (Canary Deployments)
-- Secrets Management
+✅ Application deployed on Amazon EKS
+
+✅ GitOps deployment managed by ArgoCD
+
+✅ Kubernetes manifests validated before deployment
 
 ---
 
@@ -198,8 +163,8 @@ kubectl get pods
 
 Ahmed Ashraf
 
-DevOps Engineer (Learning Journey)
+DevOps Engineer
 
-LinkedIn: YOUR_LINKEDIN
-GitHub: https://github.com/engahmedashraf74
+GitHub:
+https://github.com/engahmedashraf74/Atlas-Platform
 
