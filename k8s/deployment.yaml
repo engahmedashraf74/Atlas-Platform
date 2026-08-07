@@ -1,3 +1,4 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 
@@ -23,3 +24,4 @@ spec:
 
           ports:
             - containerPort: 8080
+            
