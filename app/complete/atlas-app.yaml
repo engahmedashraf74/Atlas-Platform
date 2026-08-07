@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: atlas-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: atlas-app
+  template:
+    metadata:
+      labels:
+        app: atlas-app
+    spec:
+      containers:
+      - name: atlas-app
+        image: 697114252645.dkr.ecr.eu-central-1.amazonaws.com/atlas-app:v1
+        ports:
+        - containerPort: 8080
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: atlas-app-service
+spec:
+  selector:
+    app: atlas-app
+  ports:
+  - port: 80
+    targetPort: 8080
+  type: LoadBalancer
